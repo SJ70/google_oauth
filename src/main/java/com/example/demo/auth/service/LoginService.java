@@ -1,6 +1,9 @@
 package com.example.demo.auth.service;
 
+import com.example.demo.auth.dto.RegistrationDTO;
+import com.example.demo.user.service.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -17,9 +20,12 @@ public class LoginService {
 
     private final Environment env;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final UserService userService;
 
-    public LoginService(Environment env) {
+    @Autowired
+    public LoginService(Environment env, UserService userService) {
         this.env = env;
+        this.userService = userService;
     }
 
     public void socialLogin(String code, String registrationId) {
@@ -28,6 +34,13 @@ public class LoginService {
 
         JsonNode userInfo = getUserInfo(accessToken, registrationId);
         System.out.println("userInfo = " + userInfo);
+
+        String id = userInfo.get("id").asText();
+        String name = userInfo.get("name").asText();
+        String email = userInfo.get("email").asText();
+        RegistrationDTO registrationDTO = new RegistrationDTO(registrationId, id, name, email);
+
+        userService.updateUser(registrationDTO);
     }
 
     private String getAccessToken(String authorizationCode, String registrationId) {
